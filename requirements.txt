@@ -1,23 +1,25 @@
 # Model Building Requirements
-numpy==1.16.4
-pandas==1.0.3
+numpy>=1.21.0
+pandas>=2.0.0
 stockstats
-scikit-learn==0.21.0
-gym==0.15.3
-stable-baselines[mpi]
-tensorflow==1.15.4
+scikit-learn>=1.0.0
+gymnasium>=0.29.0
+stable-baselines3>=2.0.0
 
-joblib==0.15.1
+joblib>=1.0.0
 
 # plot
-matplotlib==3.2.1
+matplotlib>=3.5.0
 
 # testing requirements
-pytest>=5.3.2,<6.0.0
+pytest>=7.0.0
 
 # packaging
-setuptools>=41.4.0,<42.0.0
-wheel>=0.33.6,<0.34.0
+setuptools>=65.0.0
+wheel>=0.40.0
+
+# backtesting
+pyfolio-reloaded>=0.9.5
 
 
 

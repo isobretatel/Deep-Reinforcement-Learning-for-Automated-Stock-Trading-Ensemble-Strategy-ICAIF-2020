@@ -1,8 +1,7 @@
 import numpy as np
 import pandas as pd
-from gym.utils import seeding
-import gym
-from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -118,7 +117,7 @@ class StockEnvTrain(gym.Env):
             #with open('obs.pkl', 'wb') as f:  
             #    pickle.dump(self.state, f)
             
-            return self.state, self.reward, self.terminal,{}
+            return self.state, self.reward, self.terminal, False, {}
 
         else:
             # print(np.array(self.state[1:29]))
@@ -168,15 +167,16 @@ class StockEnvTrain(gym.Env):
 
 
 
-        return self.state, self.reward, self.terminal, {}
+        return self.state, self.reward, self.terminal, False, {}
 
-    def reset(self):
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
         self.asset_memory = [INITIAL_ACCOUNT_BALANCE]
         self.day = 0
         self.data = self.df.loc[self.day,:]
         self.cost = 0
         self.trades = 0
-        self.terminal = False 
+        self.terminal = False
         self.rewards_memory = []
         #initiate state
         self.state = [INITIAL_ACCOUNT_BALANCE] + \
@@ -185,13 +185,13 @@ class StockEnvTrain(gym.Env):
                       self.data.macd.values.tolist() + \
                       self.data.rsi.values.tolist() + \
                       self.data.cci.values.tolist() + \
-                      self.data.adx.values.tolist() 
-        # iteration += 1 
-        return self.state
+                      self.data.adx.values.tolist()
+        # iteration += 1
+        return np.array(self.state, dtype=np.float32), {}
     
     def render(self, mode='human'):
         return self.state
 
     def _seed(self, seed=None):
-        self.np_random, seed = seeding.np_random(seed)
+        self.np_random, seed = gym.utils.seeding.np_random(seed)
         return [seed]

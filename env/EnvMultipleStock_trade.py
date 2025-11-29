@@ -1,8 +1,7 @@
 import numpy as np
 import pandas as pd
-from gym.utils import seeding
-import gym
-from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -156,7 +155,7 @@ class StockEnvTrade(gym.Env):
             #with open('obs.pkl', 'wb') as f:  
             #    pickle.dump(self.state, f)
             
-            return self.state, self.reward, self.terminal,{}
+            return self.state, self.reward, self.terminal, False, {}
 
         else:
             # print(np.array(self.state[1:29]))
@@ -209,9 +208,10 @@ class StockEnvTrade(gym.Env):
             self.reward = self.reward*REWARD_SCALING
 
 
-        return self.state, self.reward, self.terminal, {}
+        return self.state, self.reward, self.terminal, False, {}
 
-    def reset(self):  
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
         if self.initial:
             self.asset_memory = [INITIAL_ACCOUNT_BALANCE]
             self.day = 0
@@ -219,7 +219,7 @@ class StockEnvTrade(gym.Env):
             self.turbulence = 0
             self.cost = 0
             self.trades = 0
-            self.terminal = False 
+            self.terminal = False
             #self.iteration=self.iteration
             self.rewards_memory = []
             #initiate state
@@ -229,7 +229,7 @@ class StockEnvTrade(gym.Env):
                           self.data.macd.values.tolist() + \
                           self.data.rsi.values.tolist()  + \
                           self.data.cci.values.tolist()  + \
-                          self.data.adx.values.tolist() 
+                          self.data.adx.values.tolist()
         else:
             previous_total_asset = self.previous_state[0]+ \
             sum(np.array(self.previous_state[1:(STOCK_DIM+1)])*np.array(self.previous_state[(STOCK_DIM+1):(STOCK_DIM*2+1)]))
@@ -240,7 +240,7 @@ class StockEnvTrade(gym.Env):
             self.turbulence = 0
             self.cost = 0
             self.trades = 0
-            self.terminal = False 
+            self.terminal = False
             #self.iteration=iteration
             self.rewards_memory = []
             #initiate state
@@ -253,14 +253,14 @@ class StockEnvTrade(gym.Env):
                           self.data.macd.values.tolist() + \
                           self.data.rsi.values.tolist()  + \
                           self.data.cci.values.tolist()  + \
-                          self.data.adx.values.tolist() 
-            
-        return self.state
+                          self.data.adx.values.tolist()
+
+        return np.array(self.state, dtype=np.float32), {}
     
     def render(self, mode='human',close=False):
         return self.state
     
 
     def _seed(self, seed=None):
-        self.np_random, seed = seeding.np_random(seed)
+        self.np_random, seed = gym.utils.seeding.np_random(seed)
         return [seed]

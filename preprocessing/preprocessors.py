@@ -56,30 +56,33 @@ def add_technical_indicator(df):
     stock['close'] = stock['adjcp']
     unique_ticker = stock.tic.unique()
 
-    macd = pd.DataFrame()
-    rsi = pd.DataFrame()
-    cci = pd.DataFrame()
-    dx = pd.DataFrame()
+    macd_list = []
+    rsi_list = []
+    cci_list = []
+    dx_list = []
 
-    #temp = stock[stock.tic == unique_ticker[0]]['macd']
     for i in range(len(unique_ticker)):
         ## macd
         temp_macd = stock[stock.tic == unique_ticker[i]]['macd']
         temp_macd = pd.DataFrame(temp_macd)
-        macd = macd.append(temp_macd, ignore_index=True)
+        macd_list.append(temp_macd)
         ## rsi
         temp_rsi = stock[stock.tic == unique_ticker[i]]['rsi_30']
         temp_rsi = pd.DataFrame(temp_rsi)
-        rsi = rsi.append(temp_rsi, ignore_index=True)
+        rsi_list.append(temp_rsi)
         ## cci
         temp_cci = stock[stock.tic == unique_ticker[i]]['cci_30']
         temp_cci = pd.DataFrame(temp_cci)
-        cci = cci.append(temp_cci, ignore_index=True)
+        cci_list.append(temp_cci)
         ## adx
         temp_dx = stock[stock.tic == unique_ticker[i]]['dx_30']
         temp_dx = pd.DataFrame(temp_dx)
-        dx = dx.append(temp_dx, ignore_index=True)
+        dx_list.append(temp_dx)
 
+    macd = pd.concat(macd_list, ignore_index=True)
+    rsi = pd.concat(rsi_list, ignore_index=True)
+    cci = pd.concat(cci_list, ignore_index=True)
+    dx = pd.concat(dx_list, ignore_index=True)
 
     df['macd'] = macd
     df['rsi'] = rsi
@@ -101,7 +104,7 @@ def preprocess_data():
     # add technical indicators using stockstats
     df_final=add_technical_indicator(df_preprocess)
     # fill the missing values at the beginning
-    df_final.fillna(method='bfill',inplace=True)
+    df_final.bfill(inplace=True)
     return df_final
 
 def add_turbulence(df):

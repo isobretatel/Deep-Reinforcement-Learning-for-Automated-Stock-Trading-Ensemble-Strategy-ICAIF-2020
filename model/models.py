@@ -2,20 +2,15 @@
 import pandas as pd
 import numpy as np
 import time
-import gym
+import gymnasium as gym
 
-# RL models from stable-baselines
-# from stable_baselines import GAIL, SAC
-from stable_baselines import ACER
-from stable_baselines import PPO2
-from stable_baselines import A2C
-from stable_baselines import DDPG
-from stable_baselines import TD3
-# from stable_baselines.gail import ExportDataset, generate_expert_traj
-from stable_baselines.ddpg.policies import DDPGPolicy
-from stable_baselines.common.policies import MlpPolicy, MlpLstmPolicy, MlpLnLstmPolicy
-from stable_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise, AdaptiveParamNoiseSpec
-from stable_baselines.common.vec_env import DummyVecEnv
+# RL models from stable-baselines3
+from stable_baselines3 import PPO
+from stable_baselines3 import A2C
+from stable_baselines3 import DDPG
+from stable_baselines3 import TD3
+from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
+from stable_baselines3.common.vec_env import DummyVecEnv
 from preprocessing.preprocessors import *
 from config import config
 
@@ -44,11 +39,10 @@ def train_DDPG(env_train, model_name, timesteps=10000):
 
     # add the noise objects for DDPG
     n_actions = env_train.action_space.shape[-1]
-    param_noise = None
     action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=float(0.5) * np.ones(n_actions))
 
     start = time.time()
-    model = DDPG('MlpPolicy', env_train, param_noise=param_noise, action_noise=action_noise, actor_lr=0.001, critic_lr=0.005, seed=seed)
+    model = DDPG('MlpPolicy', env_train, action_noise=action_noise, learning_rate=0.001, seed=seed, buffer_size=50000)
     model.learn(total_timesteps=timesteps)
     end = time.time()
 
@@ -59,12 +53,12 @@ def train_DDPG(env_train, model_name, timesteps=10000):
 def train_TD3(env_train, model_name, timesteps=10000):
     """TD3 model"""
 
-    # add the noise objects for DDPG
+    # add the noise objects for TD3
     n_actions = env_train.action_space.shape[-1]
     action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=float(0.5) * np.ones(n_actions))
 
     start = time.time()
-    model = TD3('MlpPolicy', env_train, action_noise=action_noise, random_exploration=0, seed=seed)
+    model = TD3('MlpPolicy', env_train, action_noise=action_noise, seed=seed, buffer_size=50000)
     model.learn(total_timesteps=timesteps)
     end = time.time()
 
@@ -75,12 +69,12 @@ def train_TD3(env_train, model_name, timesteps=10000):
 def train2_TD3(env_train, model_name, timesteps=10000):
     """TD3 model"""
 
-    # add the noise objects for DDPG
+    # add the noise objects for TD3
     n_actions = env_train.action_space.shape[-1]
     action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=float(0.1) * np.ones(n_actions))
 
     start = time.time()
-    model = TD3('MlpPolicy', env_train, action_noise=action_noise, random_exploration=0.005, learning_rate=0.001, seed=seed)
+    model = TD3('MlpPolicy', env_train, action_noise=action_noise, learning_rate=0.001, seed=seed, buffer_size=50000)
     model.learn(total_timesteps=timesteps)
     end = time.time()
 
@@ -91,12 +85,12 @@ def train2_TD3(env_train, model_name, timesteps=10000):
 def train3_TD3(env_train, model_name, timesteps=10000):
     """TD3 model"""
 
-    # add the noise objects for DDPG
+    # add the noise objects for TD3
     n_actions = env_train.action_space.shape[-1]
     action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=float(0.5) * np.ones(n_actions))
 
     start = time.time()
-    model = TD3('MlpPolicy', env_train, action_noise=action_noise, random_exploration=0.01, seed=seed)
+    model = TD3('MlpPolicy', env_train, action_noise=action_noise, seed=seed, buffer_size=50000)
     model.learn(total_timesteps=timesteps)
     end = time.time()
 
@@ -104,22 +98,11 @@ def train3_TD3(env_train, model_name, timesteps=10000):
     print('Training time (TD3): ', (end-start)/60,' minutes')
     return model
 
-def train_ACKTR(env_train, model_name, timesteps=25000):
-    start = time.time()
-    model = ACKTR('MlpPolicy', env_train, verbose=1, seed=seed)
-    model.learn(total_timesteps=timesteps)
-    end = time.time()
-
-    model.save(f"{config.TRAINED_MODEL_DIR}/{model_name}")
-    print('Training time (ACKTR): ', (end - start) / 60, ' minutes')
-    return model
-
 def train_PPO(env_train, model_name, timesteps=50000):
     """PPO model"""
 
     start = time.time()
-    model = PPO2('MlpPolicy', env_train, ent_coef = 0.005, nminibatches = 4, n_steps=64, seed=seed)
-    #model = PPO2('MlpPolicy', env_train, ent_coef = 0.005)
+    model = PPO('MlpPolicy', env_train, ent_coef=0.005, n_steps=64, seed=seed)
 
     model.learn(total_timesteps=timesteps)
     end = time.time()
@@ -156,10 +139,11 @@ def DRL_prediction(df,
         action, _states = model.predict(obs_trade)
         obs_trade, rewards, dones, info = env_trade.step(action)
         if i == (len(trade_data.index.unique()) - 2):
-            # print(env_test.render())
-            last_state = env_trade.render()
+            # Access the underlying environment's state directly
+            last_state = env_trade.envs[0].render()
 
-    df_last_state = pd.DataFrame({'last_state': last_state})
+    # Convert list to DataFrame with proper index
+    df_last_state = pd.DataFrame({'last_state': last_state}, index=range(len(last_state)))
     df_last_state.to_csv('results/last_state_{}_{}.csv'.format(name, i), index=False)
     return last_state
 
